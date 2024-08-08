@@ -83,8 +83,18 @@ class Performance(models.Model):
 class Ticket(models.Model):
     row = models.IntegerField()
     seat = models.IntegerField()
-    performance = models.ForeignKey(Performance, on_delete=models.CASCADE, related_name='tickets')
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='tickets')
+    performance = models.ForeignKey(
+        Performance,
+        on_delete=models.CASCADE,
+        related_name='tickets'
+    )
+    reservation = models.ForeignKey(
+        Reservation,
+        on_delete=models.CASCADE,
+        related_name='tickets',
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"{str(self.performance)} (row: {self.row}, seat: {self.seat})"
