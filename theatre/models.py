@@ -6,7 +6,8 @@ class Reservation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='reservations',
     )
 
     def __str__(self):
@@ -21,12 +22,20 @@ class TheatreHall(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def num_seats(self):
+        return self.seats_in_rows * self.rows
+
 
 class Actor(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
 
     def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
 
@@ -74,7 +83,8 @@ class Performance(models.Model):
 class Ticket(models.Model):
     row = models.IntegerField()
     seat = models.IntegerField()
-    performance = models.ForeignKey(Performance, on_delete=models.CASCADE)
+    performance = models.ForeignKey(Performance, on_delete=models.CASCADE, related_name='tickets')
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='tickets')
 
     def __str__(self):
         return f"{str(self.performance)} (row: {self.row}, seat: {self.seat})"
