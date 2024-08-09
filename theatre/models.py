@@ -4,24 +4,16 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
-
-
-class Reservation(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='reservations',
-    )
-
-    def __str__(self):
-        return str(self.created_at)
+from rest_framework.exceptions import ValidationError
 
 
 class TheatreHall(models.Model):
     name = models.CharField(max_length=255)
     rows = models.IntegerField()
     seats_in_rows = models.IntegerField()
+
+    class Meta:
+        verbose_name_plural = "theatre halls"
 
     def __str__(self):
         return self.name
@@ -97,8 +89,29 @@ class Performance(models.Model):
     )
     show_time = models.DateTimeField()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["play", "theatre_hall"]),
+            models.Index(fields=["show_time"]),
+        ]
+
     def __str__(self):
-        return f"{self.play.title} {str(self.show_time)}"
+        return f"{self.play.title} {self.theatre_hall} {str(self.show_time)}"
+
+
+class Reservation(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reservations',
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return str(self.created_at)
 
 
 class Ticket(models.Model):
@@ -116,6 +129,55 @@ class Ticket(models.Model):
         null=True,
         blank=True
     )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tickets',
+    )
 
     def __str__(self):
         return f"{str(self.performance)} (row: {self.row}, seat: {self.seat})"
+
+    class Meta:
+        unique_together = ("performance", "row", "seat")
+        ordering = ["row", "seat"]
+
+    @staticmethod
+    def validate_ticket(row, seat, cinema_hall, error_to_raise):
+        for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
+            (row, "row", "rows"),
+            (seat, "seat", "seats_in_rows"),
+        ]:
+            count_attrs = getattr(cinema_hall, cinema_hall_attr_name)
+            if not (1 <= ticket_attr_value <= count_attrs):
+                raise error_to_raise(
+                    {
+                        ticket_attr_name: f"{ticket_attr_name} number "
+                        f"must be in available range: "
+                        f"(1, {cinema_hall_attr_name}): "
+                        f"(1, {count_attrs})"
+                    }
+                )
+
+    def clean(self):
+        Ticket.validate_ticket(
+            self.row,
+            self.seat,
+            self.performance.theatre_hall,
+            ValidationError,
+        )
+
+    def save(
+        self,
+        force_update=False,
+        force_insert=False,
+        using=None,
+        update_fields=None
+    ):
+        self.full_clean()
+        return super(Ticket, self).save(
+            force_insert,
+            force_update,
+            using,
+            update_fields
+        )
