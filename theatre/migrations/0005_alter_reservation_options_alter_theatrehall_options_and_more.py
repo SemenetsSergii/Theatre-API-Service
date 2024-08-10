@@ -36,8 +36,7 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="performance",
             index=models.Index(
-                fields=["show_time"],
-                name="theatre_per_show_ti_6fef99_idx"
+                fields=["show_time"], name="theatre_per_show_ti_6fef99_idx"
             ),
         ),
     ]

@@ -86,19 +86,19 @@ class PlayViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "genres",
+                "genre",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genre id (ex. ?genres=2,5)",
+                description="Filter by genre id (ex. ?genre=genre)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actor id (ex. ?actors=2,5)",
+                description="Filter by actor id (ex. ?actors=actors)",
             ),
             OpenApiParameter(
                 "title",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by play title (ex. ?title=fiction)",
+                description="Filter by play title (ex. ?title=title)",
             ),
         ]
     )
@@ -117,14 +117,12 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         if self.action == "list":
             queryset = queryset.select_related(
-                "play",
-                "theatre_hall"
+                "play", "theatre_hall"
             ).annotate(
                 tickets_available=F(
                     "theatre_hall__num_seats"
                 ) - Count(
-                    "tickets"
-                )
+                    "tickets")
             )
         return queryset
 
