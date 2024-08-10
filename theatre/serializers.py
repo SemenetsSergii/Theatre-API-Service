@@ -11,7 +11,7 @@ from theatre.models import (
     Performance,
     Reservation,
     TheatreHall,
-    Ticket
+    Ticket,
 )
 
 
@@ -90,7 +90,7 @@ class TicketSerializer(serializers.ModelSerializer):
             attrs["row"],
             attrs["seat"],
             attrs["performance"].theatre_hall,
-            ValidationError
+            ValidationError,
         )
         return data
 

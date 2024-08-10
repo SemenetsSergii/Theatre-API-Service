@@ -1,6 +1,5 @@
-from django.core.cache import cache
 from django.db.models import F, Count, Sum
-from rest_framework import viewsets, mixins, serializers
+from rest_framework import viewsets, mixins
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
@@ -11,7 +10,8 @@ from theatre.models import (
     Play,
     Performance,
     Reservation,
-    TheatreHall, Ticket,
+    TheatreHall,
+    Ticket,
 )
 from theatre.serializers import (
     ActorSerializer,
@@ -25,7 +25,8 @@ from theatre.serializers import (
     PerformanceListSerializer,
     ReservationSerializer,
     ReservationListSerializer,
-    TheatreHallSerializer, TicketSerializer,
+    TheatreHallSerializer,
+    TicketSerializer,
 )
 from theatre.permissions import IsAdminOrIfAuthenticatedReadOnly
 
@@ -84,7 +85,7 @@ class PlayViewSet(viewsets.ModelViewSet):
 
 class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = Performance.objects.annotate(
-        num_seats=Sum('theatre_hall__seats_in_rows')
+        num_seats=Sum("theatre_hall__seats_in_rows")
     )
     serializer_class = PerformanceSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -92,8 +93,15 @@ class PerformanceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = self.queryset
         if self.action == "list":
-            queryset = queryset.select_related('play', 'theatre_hall').annotate(
-                tickets_available=F('theatre_hall__num_seats') - Count('tickets')
+            queryset = queryset.select_related(
+                "play",
+                "theatre_hall"
+            ).annotate(
+                tickets_available=F(
+                    "theatre_hall__num_seats"
+                ) - Count(
+                    "tickets"
+                )
             )
         return queryset
 

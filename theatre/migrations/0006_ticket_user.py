@@ -10,7 +10,8 @@ class Migration(migrations.Migration):
     dependencies = [
         (
             "theatre",
-            "0005_alter_reservation_options_alter_theatrehall_options_and_more",
+            "0005_alter_reservation_options"
+            "_alter_theatrehall_options_and_more",
         ),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

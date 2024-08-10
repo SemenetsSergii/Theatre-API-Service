@@ -15,14 +15,18 @@ class Migration(migrations.Migration):
             model_name="actor",
             name="image",
             field=models.ImageField(
-                blank=True, null=True, upload_to=theatre.models.create_custom_path
+                blank=True,
+                null=True,
+                upload_to=theatre.models.create_custom_path
             ),
         ),
         migrations.AddField(
             model_name="play",
             name="image",
             field=models.ImageField(
-                blank=True, null=True, upload_to=theatre.models.create_custom_path
+                blank=True,
+                null=True,
+                upload_to=theatre.models.create_custom_path
             ),
         ),
     ]

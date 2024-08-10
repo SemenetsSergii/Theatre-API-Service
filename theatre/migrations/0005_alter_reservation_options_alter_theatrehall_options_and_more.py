@@ -29,13 +29,15 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="performance",
             index=models.Index(
-                fields=["play", "theatre_hall"], name="theatre_per_play_id_f2894b_idx"
+                fields=["play", "theatre_hall"],
+                name="theatre_per_play_id_f2894b_idx"
             ),
         ),
         migrations.AddIndex(
             model_name="performance",
             index=models.Index(
-                fields=["show_time"], name="theatre_per_show_ti_6fef99_idx"
+                fields=["show_time"],
+                name="theatre_per_show_ti_6fef99_idx"
             ),
         ),
     ]
