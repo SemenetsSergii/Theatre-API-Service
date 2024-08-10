@@ -181,3 +181,6 @@ class Ticket(models.Model):
             using,
             update_fields
         )
+
+    class Meta:
+        ordering = ["id"]

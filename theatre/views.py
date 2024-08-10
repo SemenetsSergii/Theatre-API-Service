@@ -1,6 +1,7 @@
 from django.core.cache import cache
 from django.db.models import F, Count, Sum
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, serializers
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
@@ -105,30 +106,26 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         return PerformanceSerializer
 
 
+class ReservationPagination(PageNumberPagination):
+    page_size = 2
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class ReservationViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
+    GenericViewSet,
 ):
-    queryset = Reservation.objects.all()
+    queryset = Reservation.objects.prefetch_related(
+        "tickets__performance__play", "tickets__performance__theatre_hall"
+    )
     serializer_class = ReservationSerializer
+    pagination_class = ReservationPagination
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        # This queryset is further filtered based on the current user
-        queryset = self.queryset.filter(user=self.request.user)
-
-        if self.action == "list":
-            # Prefetch related data only when listing reservations
-            queryset = queryset.prefetch_related(
-                "tickets__performance__play",
-                "tickets__performance__theatre_hall"
-            )
-
-        return queryset
+        return Reservation.objects.filter(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -151,12 +148,12 @@ class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        cache_key = 'all_tickets'
-        queryset = cache.get(cache_key)
-        if not queryset:
-            queryset = Ticket.objects.select_related('performance').prefetch_related('performance__theatre_hall')
-            cache.set(cache_key, queryset, timeout=60 * 15)  # Cache for 15 minutes
-        return queryset
+        user = self.request.user
+        return Ticket.objects.filter(reservation__user=user).select_related(
+            "performance__play",
+            "reservation",
+            "reservation__user",
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

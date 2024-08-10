@@ -2,6 +2,8 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from user.serializers import UserSerializer
+
 from theatre.models import (
     Actor,
     Genre,
@@ -76,17 +78,12 @@ class PlayImageSerializer(serializers.ModelSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Ticket
-        fields = ("id", "row", "seat", "performance")
+        fields = ("id", "row", "seat", "performance", "user")
 
-    # def validate(self, attrs):
-    #     if not (1 <= attrs['seat'] <= attrs['seats'].theatre_hall.num_seats):
-    #         raise serializers.ValidationError(
-    #             {
-    #                 "seat": f"seat must be in range [1, {attrs['trip'].theatre_hall.num_seats}], not {attrs['seat']}",
-    #             }
-    #         )
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(
@@ -149,14 +146,27 @@ class TicketListSerializer(TicketSerializer):
 
 
 class ReservationSerializer(serializers.ModelSerializer):
-    # tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
+    tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
+
     class Meta:
         model = Reservation
-        fields = ("id", "created_at", "user", "tickets")
+        fields = ("id", "created_at", "tickets")
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            tickets_data = validated_data.pop("tickets")
+            reservation = Reservation.objects.create(**validated_data)
+            for ticket_data in tickets_data:
+                Ticket.objects.create(order=reservation, **ticket_data)
+            return reservation
 
 
 class ReservationListSerializer(ReservationSerializer):
-    tickets = TicketListSerializer(many=True, read_only=True)
+    tickets = TicketSerializer(many=True, read_only=True, allow_empty=False)
+
+    class Meta:
+        model = Reservation
+        fields = ("id", "user", "tickets")
 
 
 class TicketsDetailSerializer(PlaySerializer):
@@ -168,4 +178,4 @@ class TicketsDetailSerializer(PlaySerializer):
 
     class Meta:
         model = Play
-        fields = ("id", "row", "seat", "performance", "user")
+        fields = ("id", "row", "seat", "performance")
