@@ -14,9 +14,9 @@ router = routers.DefaultRouter()
 router.register("actors", ActorViewSet)
 router.register("genres", GenreViewSet)
 router.register("plays", PlayViewSet)
+router.register("theatre_hall", TheatreHallViewSet, basename="theatre_hall")
 router.register("performances", PerformanceViewSet)
 router.register("reservations", ReservationViewSet)
-router.register("theatre_hall", TheatreHallViewSet, basename="theatre_hall")
 router.register("tickets", TicketViewSet)
 
 urlpatterns = router.urls
