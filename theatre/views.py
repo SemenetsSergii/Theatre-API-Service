@@ -36,18 +36,21 @@ class ActorViewSet(viewsets.ModelViewSet):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    """Endpoints of the actors in theatre with basic CRUD operations"""
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    """Endpoints of the genre in theatre with basic CRUD operations"""
 
 
 class PlayViewSet(viewsets.ModelViewSet):
     queryset = Play.objects.all()
     serializer_class = PlaySerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    """Endpoints of the play in theatre with basic CRUD operations"""
 
     @staticmethod
     def _params_to_ints(queryset):
@@ -55,7 +58,7 @@ class PlayViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset
-
+        """Retrieve plays with filters"""
         actors = self.request.query_params.get("actors")
         genre = self.request.query_params.get("genre")
         title = self.request.query_params.get("title")
@@ -110,19 +113,15 @@ class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = Performance.objects.annotate(
         num_seats=Sum("theatre_hall__seats_in_rows")
     )
+    """Endpoints of the performance in theatre with basic CRUD operations"""
     serializer_class = PerformanceSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
         queryset = self.queryset
         if self.action == "list":
-            queryset = queryset.select_related(
-                "play", "theatre_hall"
-            ).annotate(
-                tickets_available=F(
-                    "theatre_hall__num_seats"
-                ) - Count(
-                    "tickets")
+            queryset = queryset.select_related("play", "theatre_hall").annotate(
+                tickets_available=F("theatre_hall__num_seats") - Count("tickets")
             )
         return queryset
 
@@ -146,6 +145,7 @@ class ReservationViewSet(
     mixins.CreateModelMixin,
     GenericViewSet,
 ):
+    """Endpoints of the reservations in theatre with basic CRUD operations"""
     queryset = Reservation.objects.prefetch_related(
         "tickets__performance__play", "tickets__performance__theatre_hall"
     )
@@ -169,13 +169,14 @@ class TheatreHallViewSet(viewsets.ModelViewSet):
     queryset = TheatreHall.objects.all()
     serializer_class = TheatreHallSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    """Endpoints of the theatre hall in theatre with basic CRUD operations"""
 
 
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     permission_classes = (IsAuthenticated,)
-
+    """Endpoints of the tickets in theatre with basic CRUD operations"""
     def get_queryset(self):
         user = self.request.user
         return Ticket.objects.filter(reservation__user=user).select_related(
